@@ -299,8 +299,10 @@ class parseGetosData {
 							break;
 						}
 						case 'hpdisks': {
-							// convert encoded list to a nested array
-							$this->pdata[$h]['hpdisks'] = $this->nestedListToArray($item);
+							if (preg_match('/^Error/', $item, $mtch) == 0) {
+								// convert encoded list to a nested array
+								$this->pdata[$h]['hpdisks'] = $this->nestedListToArray($item);
+							}
 							break;
 						}
 						default: {

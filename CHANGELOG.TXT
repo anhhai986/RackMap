@@ -1,3 +1,6 @@
+1.0.045 (2013-03-14)
+	- import getos data tool was fixed.
+
 1.0.044 (2013-03-14)
 	- import getos data was extended to include hp disk controllers data.
 	- rackmap_database.sql now includes new object types and attributes.
