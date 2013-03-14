@@ -1,3 +1,8 @@
+1.0.044 (2013-03-14)
+	- import getos data was extended to include hp disk controllers data.
+	- rackmap_database.sql now includes new object types and attributes.
+	- TCPDF library was updated.
+
 1.0.043 (2013-01-10)
 	- A new interface to import data from GetOS tool was added.
 	- TCPDF library was updated.

@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : tce_edit_objects.php
 // Begin       : 2011-10-31
-// Last Update : 2012-12-14
+// Last Update : 2013-03-14
 //
 // Description : Edit Objects.
 //
@@ -363,6 +363,15 @@ switch($menu_mode) { // process submitted data
 			break;
 		}
 		if ($forcedelete == $l['w_delete']) { //check if delete button has been pushed (redundant check)
+			// delete object groups permissions
+			$sql = 'DELETE FROM '.K_TABLE_OBJECT_GROUPS.' WHERE obg_obj_id IN (SELECT omp_child_obj_id FROM '.K_TABLE_OBJECTS_MAP.' WHERE omp_parent_obj_id='.$obj_id.')';
+			if (!$r = F_db_query($sql, $db)) {
+				F_display_db_error(false);
+			}
+			$sql = 'DELETE FROM '.K_TABLE_OBJECT_GROUPS.' WHERE obg_obj_id='.$obj_id;
+			if (!$r = F_db_query($sql, $db)) {
+				F_display_db_error(false);
+			}
 			// delete child objects
 			$sql = 'DELETE FROM '.K_TABLE_OBJECTS.' WHERE obj_id IN (SELECT omp_child_obj_id FROM '.K_TABLE_OBJECTS_MAP.' WHERE omp_parent_obj_id='.$obj_id.')';
 			if (!$r = F_db_query($sql, $db)) {

@@ -2,7 +2,7 @@
 //=============================================================================+
 // File name   : tce_parseGetosData.php
 // Begin       : 2012-12-19
-// Last Update : 2013-01-08
+// Last Update : 2013-03-14
 // Version     : 1.0.000
 //
 // Description : PHP Class to parse raw data returned by getos.sh script.
@@ -66,7 +66,7 @@ class parseGetosData {
 	 * Keys used on the returned array
 	 * @protected
 	 */
-	protected $item_keys = array('ip', 'hostname', 'os release', 'uname', 'os type', 'kernel name', 'kernel release', 'kernel version', 'kernel architecture', 'manufacturer', 'product', 'serial', 'uuid', 'ram', 'hddsize', 'disks', 'network', 'cpu', 'dmidecode');
+	protected $item_keys = array('ip', 'hostname', 'os release', 'uname', 'os type', 'kernel name', 'kernel release', 'kernel version', 'kernel architecture', 'manufacturer', 'product', 'serial', 'uuid', 'ram', 'hddsize', 'disks', 'network', 'cpu', 'dmidecode', 'hpdisks');
 
 	/**
 	 * Disk keys used on the returned array
@@ -100,6 +100,76 @@ class parseGetosData {
 	 */
 	public function getJson() {
 		return json_encode($this->pdata);
+	}
+	
+	/**
+	 * Convert nested list with <N> and <T> marks to a nested array.
+	 * @param $lst (string) String containing the encoded list to convert..
+	 */
+	public function nestedListToArray($lst) {
+		// convert string to nested array
+		$result = array();
+		$path = array();
+		foreach (preg_split("/<N>/", $lst) as $line) {
+			// get the line depth
+			$depth = 0;
+			while (preg_match('/<T>/', $line, $match) > 0) {
+				++$depth;
+				$line = substr($line, 3);
+			}
+			// remove elements from the end of path if needed
+			while ($depth < sizeof($path)) {
+				array_pop($path);
+			}
+			// store the last label for this depth
+			$path[$depth] = $line;
+			// traverse path and add label to result
+			$parent =& $result;
+			foreach ($path as $depth => $key) {
+				if (!isset($parent[$key])) {
+					$parent[$line] = array();
+					break;
+				}
+				$parent =& $parent[$key];
+			}
+		}
+		return $this->reindexArray($result);
+	}
+
+	/**
+	 * Reindex the array.
+	 * @param $arr (array) Array to reindex.
+	 */
+	public function reindexArray($arr) {
+		$res = array();
+		$id = 0;
+		foreach ($arr as $k => $v) {
+			if (empty($k)) {
+				return $res;
+			}
+			if (empty($v)) {
+				if (preg_match('/^([^:]+)[:][ ]?([^<]*)/', $k, $match) > 0) {
+					$res[$match[1]] = $match[2];
+				} else {
+					$res[$k] = $k;
+				}
+			} else {
+				// we have a sub-array
+				if (preg_match('/^([^:]+)[:][ ]?([^<]*)/', $k, $match) > 0) {
+					if (strpos($match[2], ':') !== false) {
+						preg_match('/^([^ ]+)[ ]?([^<]*)/', $k, $match);
+					}
+					$res[$id]['item'] = $match[1];
+					$res[$id]['value'] = $match[2];
+					$res[$id] += $this->reindexArray($v);
+				} else {
+					$res[$id]['item'] = $k;
+					$res[$id] += $this->reindexArray($v);
+				}
+				++$id;
+			}
+		}
+		return $res;
 	}
 
 	/**
@@ -206,7 +276,7 @@ class parseGetosData {
 										if (preg_match('/^([^:]+)[:]([ ]?)([^<]*)/', $match[1][0], $submatch) > 0) {
 											if (!empty($submatch[2])) {
 												$this->pdata[$h]['dmi'][$dmitype][$s][$submatch[1]] = $submatch[3];
-											}	else {
+											} else {
 												$this->pdata[$h]['dmi'][$dmitype][$s][$submatch[1]] = array();
 												$si = 0;
 												while (preg_match('/<N><T><T>([^<]+)/', $dmiblock, $match, PREG_OFFSET_CAPTURE, $offset) > 0) {
@@ -227,7 +297,12 @@ class parseGetosData {
 							// convert value from kb to Bytes
 							$this->pdata[$h][$this->item_keys[$i]] = (intval($item) * 1024);
 							break;
-						} 
+						}
+						case 'hpdisks': {
+							// convert encoded list to a nested array
+							$this->pdata[$h]['hpdisks'] = $this->nestedListToArray($item);
+							break;
+						}
 						default: {
 							$this->pdata[$h][$this->item_keys[$i]] = trim($item);
 							break;

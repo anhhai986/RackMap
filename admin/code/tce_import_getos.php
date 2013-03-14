@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : tce_import_getos.php
 // Begin       : 2013-01-08
-// Last Update : 2013-01-10
+// Last Update : 2013-01-14
 //
 // Description : Import object data from getos.sh data file.
 //
@@ -222,7 +222,7 @@ function F_importServerObj($srv) {
 			$cpuname = sprintf('CPU%02d', $cpucount);
 			// check if CPU exist
 			$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
-				WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$obj_id.' AND obj_obt_id=58
+				WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$obj_id.' AND obj_obt_id=58 AND obj_name=\''.$cpuname.'\'
 				ORDER BY obj_name';
 			if ($r = F_db_query($sql, $db)) {
 				if ($m = F_db_fetch_assoc($r)) {
@@ -276,6 +276,9 @@ function F_importServerObj($srv) {
 					} elseif (isset($srv['cpu'][$k])) {
 						$value = $srv['cpu'][$k];
 					}
+					if (preg_match('/([0-9\.]+)[\s]?([KMGT][B]?)/', $value, $vmtch) > 0) {
+						$value = $vmtch[1];
+					}
 					if (strlen($value) > 0) {
 						// add or update attribute value
 						$sqla = 'REPLACE INTO '.K_TABLE_ATTRIBUTE_VALUES.' (
@@ -320,7 +323,7 @@ function F_importServerObj($srv) {
 	if (isset($srv['ram']) AND !empty($srv['ram'])) {
 		// get total ram in gigabytes
 		$totalram = round(floatval($srv['ram']) / 1024 / 1024 / 1024);
-		// check if RAM object exist
+			// check if RAM object exist
 			$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
 				WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$obj_id.' AND obj_obt_id=59
 				ORDER BY obj_name';
@@ -395,7 +398,7 @@ function F_importServerObj($srv) {
 				$memname = sprintf('SLOT%02d', $memcount);
 				// check if object exist
 				$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
-					WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$ram_obj_id.' AND obj_obt_id=60
+					WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$ram_obj_id.' AND obj_obt_id=60 AND obj_name=\''.$memname.'\'
 					ORDER BY obj_name';
 				if ($r = F_db_query($sql, $db)) {
 					if ($m = F_db_fetch_assoc($r)) {
@@ -441,7 +444,7 @@ function F_importServerObj($srv) {
 							return false;
 						}
 					}
-					// for each server attribute
+					// for each memory attribute
 					foreach ($memattrmap as $k => $v) {
 						$value = '';
 						if (isset($mem[$k])) {
@@ -496,11 +499,11 @@ function F_importServerObj($srv) {
 				$netname = sprintf('ETH%02d', $netcount);
 				// check if device exist
 				$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
-					WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$obj_id.' AND obj_obt_id=37
+					WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$obj_id.' AND obj_obt_id=37 AND obj_name=\''.$netname.'\'
 					ORDER BY obj_name';
 				if ($r = F_db_query($sql, $db)) {
 					if ($m = F_db_fetch_assoc($r)) {
-						// update existing CPU object
+						// update existing object
 						$net_obj_id = $m['obj_id'];
 					} else {
 						// create new object
@@ -573,6 +576,400 @@ function F_importServerObj($srv) {
 				}
 			}
 		}
+	}
+	
+	// disk controller (8) attribute map
+	$ctrlattrmap = array(
+		'Bus Interface' => 100,
+		'Slot' => 101,
+		'Cache Serial Number' => 102,
+		'Hardware Revision' => 103,
+		'Firmware Version' => 104,
+		'Total Cache Size' => 105,
+		'Total Cache Memory Available' => 106
+	);
+	
+	// disk array (65) attribute map
+	$darrattrmap = array(
+		'Interface Type' => 122
+	);
+
+	// logical drive (66) attribute map
+	$logdrvattrmap = array(
+		'Size' => 123,
+		'Fault Tolerance' => 107,
+		'Heads' => 108,
+		'Sectors Per Track' => 109,
+		'Cylinders' => 110,
+		'Strip Size' => 111,
+		'Full Stripe Size' => 112,
+		'Caching' =>  113,
+		'Unique Identifier' => 114,
+		'Disk Name' => 115,
+		'Mount Points' => 116,
+		'Logical Drive Label' => 117,
+		'Drive Type' => 118
+	);
+
+	// physical drive (66) attribute map
+	$phydrvattrmap = array(
+		'Port' => 119,
+		'Box' => 120,
+		'Bay' => 121,
+		'Drive Type' => 118,
+		'Interface Type' => 122,
+		'Size' => 123,
+		'Rotational Speed' => 124,
+		'Firmware Revision' => 104,
+		'Model' => 125,
+		'PHY Transfer Rate' => 126
+	);
+	
+	$disknum = 0;
+	$logdrvdisks = array(); // list physical disks that belongs to logical drives
+	// hp disk controller data
+	if (isset($srv['hpdisks']) AND !empty($srv['hpdisks'])) {
+		$ctrlcount = 0;
+		foreach($srv['hpdisks'] as $ctrl) {
+			++$ctrlcount;
+			$ctrlname = sprintf('DISKCTRL%02d', $ctrlcount);
+			// check if device exist
+			$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
+				WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$obj_id.' AND obj_obt_id=8 AND obj_name=\''.$ctrlname.'\'
+				ORDER BY obj_name';
+			if ($r = F_db_query($sql, $db)) {
+				if ($m = F_db_fetch_assoc($r)) {
+					// update existing object
+					$ctrl_obj_id = $m['obj_id'];
+				} else {
+					// create new object
+					$sqlo = 'INSERT INTO '.K_TABLE_OBJECTS.' (
+						obj_obt_id,
+						obj_name,
+						obj_description,
+						obj_label,
+						obj_tag,
+						obj_mnf_id,
+						obj_owner_id,
+						obj_tenant_id
+						) VALUES (
+						8,
+						\''.$ctrlname.'\',
+						'.F_empty_to_null($ctrl['item']).',
+						'.F_empty_to_null('').',
+						'.F_empty_to_null($ctrl['Serial Number']).',
+						'.F_zero_to_null(0).',
+						'.F_zero_to_null(0).',
+						'.F_zero_to_null(0).'
+						)';
+					if (!$ro = F_db_query($sqlo, $db)) {
+						F_display_db_error(false);
+						return false;
+					} else {
+						$ctrl_obj_id = F_db_insert_id($db, K_TABLE_OBJECTS, 'obj_id');
+					}
+					// set object map
+					$sqlm = 'INSERT INTO '.K_TABLE_OBJECTS_MAP.' (
+						omp_parent_obj_id,
+						omp_child_obj_id
+						) VALUES (
+						'.$obj_id.',
+						'.$ctrl_obj_id.'
+						)';
+					if (!$rm = F_db_query($sqlm, $db)) {
+						F_display_db_error(false);
+						return false;
+					}
+				}
+				// for each attribute
+				foreach ($ctrlattrmap as $k => $v) {
+					$value = '';
+					if (isset($ctrl[$k]) AND (strlen($ctrl[$k]) > 0)) {
+						$value = $ctrl[$k];
+						if (preg_match('/([0-9\.]+)[\s]?([KMGT]B|Gbps)/', $value, $vmtch) > 0) {
+							$value = $vmtch[1];
+						}
+						// add or update attribute value
+						$sqla = 'REPLACE INTO '.K_TABLE_ATTRIBUTE_VALUES.' (
+							atv_obj_id,
+							atv_atb_id,
+							atv_value
+							) VALUES (
+							'.$ctrl_obj_id.',
+							'.$v.',
+							\''.F_escape_sql($value).'\'
+							)';
+						if (!$ra = F_db_query($sqla, $db)) {
+							F_display_db_error(false);
+							return false;
+						}
+					}
+				}
+			} else {
+				F_display_db_error(false);
+				return false;
+			}
+			// - - - - - - - - - -
+			// disk arrays
+			foreach($ctrl as $ck => $darr) {
+				if (is_array($darr) AND ($darr['item'] == 'Array')) {
+					$diskarrayname = sprintf('ARRAY%02d', ($ck + 1));
+					// check if device exist
+					$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
+						WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$ctrl_obj_id.' AND obj_obt_id=65 AND obj_name=\''.$diskarrayname.'\'
+						ORDER BY obj_name';
+					if ($r = F_db_query($sql, $db)) {
+						if ($m = F_db_fetch_assoc($r)) {
+							// update existing object
+							$darr_obj_id = $m['obj_id'];
+						} else {
+							// create new object
+							$sqlo = 'INSERT INTO '.K_TABLE_OBJECTS.' (
+								obj_obt_id,
+								obj_name,
+								obj_description,
+								obj_label,
+								obj_tag,
+								obj_mnf_id,
+								obj_owner_id,
+								obj_tenant_id
+								) VALUES (
+								65,
+								\''.$diskarrayname.'\',
+								'.F_empty_to_null($darr['item']).',
+								'.F_empty_to_null('').',
+								'.F_empty_to_null($darr['value']).',
+								'.F_zero_to_null(0).',
+								'.F_zero_to_null(0).',
+								'.F_zero_to_null(0).'
+								)';
+							if (!$ro = F_db_query($sqlo, $db)) {
+								F_display_db_error(false);
+								return false;
+							} else {
+								$darr_obj_id = F_db_insert_id($db, K_TABLE_OBJECTS, 'obj_id');
+							}
+							// set object map
+							$sqlm = 'INSERT INTO '.K_TABLE_OBJECTS_MAP.' (
+								omp_parent_obj_id,
+								omp_child_obj_id
+								) VALUES (
+								'.$ctrl_obj_id.',
+								'.$darr_obj_id.'
+								)';
+							if (!$rm = F_db_query($sqlm, $db)) {
+								F_display_db_error(false);
+								return false;
+							}
+						}
+						// for each attribute
+						foreach ($darrattrmap as $k => $v) {
+							$value = '';
+							if (isset($darr[$k]) AND (strlen($darr[$k]) > 0)) {
+								$value = $darr[$k];
+								// add or update attribute value
+								$sqla = 'REPLACE INTO '.K_TABLE_ATTRIBUTE_VALUES.' (
+									atv_obj_id,
+									atv_atb_id,
+									atv_value
+									) VALUES (
+									'.$darr_obj_id.',
+									'.$v.',
+									\''.F_escape_sql($value).'\'
+									)';
+								if (!$ra = F_db_query($sqla, $db)) {
+									F_display_db_error(false);
+									return false;
+								}
+							}
+						}
+					} else {
+						F_display_db_error(false);
+						return false;
+					}
+					// - - - - - - - - - -
+					// logical (66) and physical (61) disks
+					foreach($darr as $dk => $dsk) {
+						if (is_array($dsk)) {
+							if ($dsk['item'] == 'Logical Drive') {
+								$ldiskname = sprintf('LOGICALDRIVE%02d', ($dk + 1));
+								// check if device exist
+								$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
+									WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$darr_obj_id.' AND obj_obt_id=66 AND obj_name=\''.$ldiskname.'\'
+									ORDER BY obj_name';
+								if ($r = F_db_query($sql, $db)) {
+									if ($m = F_db_fetch_assoc($r)) {
+										// update existing object
+										$ldsk_obj_id = $m['obj_id'];
+									} else {
+										// create new object
+										$sqlo = 'INSERT INTO '.K_TABLE_OBJECTS.' (
+											obj_obt_id,
+											obj_name,
+											obj_description,
+											obj_label,
+											obj_tag,
+											obj_mnf_id,
+											obj_owner_id,
+											obj_tenant_id
+											) VALUES (
+											66,
+											\''.$ldiskname.'\',
+											'.F_empty_to_null($dsk['item']).',
+											'.F_empty_to_null('').',
+											'.F_empty_to_null($dsk['value']).',
+											'.F_zero_to_null(0).',
+											'.F_zero_to_null(0).',
+											'.F_zero_to_null(0).'
+											)';
+										if (!$ro = F_db_query($sqlo, $db)) {
+											F_display_db_error(false);
+											return false;
+										} else {
+											$ldsk_obj_id = F_db_insert_id($db, K_TABLE_OBJECTS, 'obj_id');
+										}
+										// set object map
+										$sqlm = 'INSERT INTO '.K_TABLE_OBJECTS_MAP.' (
+											omp_parent_obj_id,
+											omp_child_obj_id
+											) VALUES (
+											'.$darr_obj_id.',
+											'.$ldsk_obj_id.'
+											)';
+										if (!$rm = F_db_query($sqlm, $db)) {
+											F_display_db_error(false);
+											return false;
+										}
+									}
+									// for each attribute
+									foreach ($logdrvattrmap as $k => $v) {
+										$value = '';
+										if (isset($dsk[$k]) AND (strlen($dsk[$k]) > 0)) {
+											$value = $dsk[$k];
+											if (preg_match('/([0-9\.]+)[\s]?([KMGT]B|Gbps)/', $value, $vmtch) > 0) {
+												$value = $vmtch[1];
+											}
+											// add or update attribute value
+											$sqla = 'REPLACE INTO '.K_TABLE_ATTRIBUTE_VALUES.' (
+												atv_obj_id,
+												atv_atb_id,
+												atv_value
+												) VALUES (
+												'.$ldsk_obj_id.',
+												'.$v.',
+												\''.F_escape_sql($value).'\'
+												)';
+											if (!$ra = F_db_query($sqla, $db)) {
+												F_display_db_error(false);
+												return false;
+											}
+										}
+									}
+								} else {
+									F_display_db_error(false);
+									return false;
+								}
+								$logdrvdisks[$ldsk_obj_id] = array();
+							} elseif ($dsk['item'] == 'physicaldrive') {
+								++$disknum;
+								$diskname = sprintf('DISK%02d', $disknum);
+								$logdrvdisks[$ldsk_obj_id][] = $diskname;
+								// check if device exist
+								$sql = 'SELECT obj_id FROM '.K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP.'
+									WHERE obj_id=omp_child_obj_id AND omp_parent_obj_id='.$ctrl_obj_id.' AND obj_obt_id=61 AND obj_name=\''.$diskname.'\'
+									ORDER BY obj_name';
+								if ($r = F_db_query($sql, $db)) {
+									if ($m = F_db_fetch_assoc($r)) {
+										// update existing object
+										$pdsk_obj_id = $m['obj_id'];
+									} else {
+										// create new object
+										$sqlo = 'INSERT INTO '.K_TABLE_OBJECTS.' (
+											obj_obt_id,
+											obj_name,
+											obj_description,
+											obj_label,
+											obj_tag,
+											obj_mnf_id,
+											obj_owner_id,
+											obj_tenant_id
+											) VALUES (
+											61,
+											\''.$diskname.'\',
+											'.F_empty_to_null($dsk['item']).',
+											'.F_empty_to_null('').',
+											'.F_empty_to_null($dsk['value']).',
+											'.F_zero_to_null(0).',
+											'.F_zero_to_null(0).',
+											'.F_zero_to_null(0).'
+											)';
+										if (!$ro = F_db_query($sqlo, $db)) {
+											F_display_db_error(false);
+											return false;
+										} else {
+											$pdsk_obj_id = F_db_insert_id($db, K_TABLE_OBJECTS, 'obj_id');
+										}
+										// set object map
+										$sqlm = 'INSERT INTO '.K_TABLE_OBJECTS_MAP.' (
+											omp_parent_obj_id,
+											omp_child_obj_id
+											) VALUES (
+											'.$ctrl_obj_id.',
+											'.$pdsk_obj_id.'
+											)';
+										if (!$rm = F_db_query($sqlm, $db)) {
+											F_display_db_error(false);
+											return false;
+										}
+									}
+									// for each attribute
+									foreach ($phydrvattrmap as $k => $v) {
+										$value = '';
+										if (isset($dsk[$k]) AND (strlen($dsk[$k]) > 0)) {
+											$value = $dsk[$k];
+											if (preg_match('/([0-9\.]+)[\s]?([KMGT]B|Gbps)/', $value, $vmtch) > 0) {
+												$value = $vmtch[1];
+											}
+											// add or update attribute value
+											$sqla = 'REPLACE INTO '.K_TABLE_ATTRIBUTE_VALUES.' (
+												atv_obj_id,
+												atv_atb_id,
+												atv_value
+												) VALUES (
+												'.$pdsk_obj_id.',
+												'.$v.',
+												\''.F_escape_sql($value).'\'
+												)';
+											if (!$ra = F_db_query($sqla, $db)) {
+												F_display_db_error(false);
+												return false;
+											}
+										}
+									}
+								} else {
+									F_display_db_error(false);
+									return false;
+								}
+							}
+						}
+					} // end of disks
+				} // is array
+			} // end of disk array
+
+		} // end for each controller
+		
+		// add physical disks on the logical drives
+		if (isset($logdrvdisks) AND !empty($logdrvdisks)) {
+			foreach ($logdrvdisks AS $logdrvid => $disks) {
+				$sql = 'UPDATE '.K_TABLE_OBJECTS.' SET
+					obj_description='.F_empty_to_null(implode(', ', $disks)).'
+					WHERE obj_id='.$logdrvid.'';
+				if (!$r = F_db_query($sql, $db)) {
+					F_display_db_error(false);
+				}
+			}
+		}
+
 	}
 
 	return true;
