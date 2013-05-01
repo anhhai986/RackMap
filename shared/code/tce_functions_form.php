@@ -87,7 +87,6 @@ function F_check_required_fields($formfields) {
 		if (!array_key_exists($fieldname, $formfields) OR strlen(trim($formfields[$fieldname])) <= 0) { //if is empty
 			if ($required_fields_labels[$i]) { // check if field has label
 				$fieldname = $required_fields_labels[$i];
-				$fieldname = preg_replace('/[^a-z0-9_\[\]]/i', '', $fieldname);
 			}
 			$missing_fields .= ', '.stripslashes($fieldname);
 		}
@@ -124,7 +123,6 @@ function F_check_fields_format($formfields) {
 				if (!preg_match("'".stripslashes($value)."'i", $formfields[$fieldname])) { //check regular expression
 					if (isset($formfields['xl_'.$fieldname]) AND !empty($formfields['xl_'.$fieldname])) { //check if field has label
 						$fieldname = $formfields['xl_'.$fieldname];
-						$fieldname = preg_replace('/[^a-z0-9_\[\]]/i', '', $fieldname);
 					}
 					$wrongfields .= ', '.stripslashes($fieldname);
 				}

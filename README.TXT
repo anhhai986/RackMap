@@ -4,9 +4,9 @@ RackMap - README
 
 Name: RackMap
 
-Version: 1.0.045
+Version: 1.0.046
 
-Release date: 2013-03-14
+Release date: 2013-05-01
 
 Author: Nicola Asuni
 

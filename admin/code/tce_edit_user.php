@@ -463,7 +463,7 @@ echo getFormRowTextInput('user_otpkey', $l['w_otpkey'], $l['h_otpkey'], '', $use
 
 // display QR-Code for Google authenticator
 if (!empty($user_otpkey)) {
-	require_once('../../shared/code/2dbarcodes.php');
+	require_once('../../shared/tcpdf/tcpdf_barcodes_2d.php');
 	$host = preg_replace('/[h][t][t][p][s]?[:][\/][\/]/', '', K_PATH_HOST);
 	$qrcode = new TCPDF2DBarcode('otpauth://totp/'.$user_name.'@'.$host.'?secret='.$user_otpkey, 'QRCODE,H');
 	echo '<div class="row">'.K_NEWLINE;

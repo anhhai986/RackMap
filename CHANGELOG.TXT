@@ -1,3 +1,8 @@
+1.0.046 (2013-05-01)
+	- Some scripts were added to the admin/tools directory.
+	- minor bugfixes.
+	- TCPDF library was updated.
+
 1.0.045 (2013-03-14)
 	- import getos data tool was fixed.
 

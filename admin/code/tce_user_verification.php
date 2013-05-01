@@ -71,7 +71,7 @@ if ($r = F_db_query($sql, $db)) {
 				echo K_NEWLINE;
 				echo '<div class="container">'.K_NEWLINE;
 				if (K_OTP_LOGIN) {
-					require_once('../../shared/code/2dbarcodes.php');
+					require_once('../../shared/tcpdf/tcpdf_barcodes_2d.php');
 					$host = preg_replace('/[h][t][t][p][s]?[:][\/][\/]/', '', K_PATH_HOST);
 					$qrcode = new TCPDF2DBarcode('otpauth://totp/'.$m['user_name'].'@'.$host.'?secret='.$m['user_otpkey'], 'QRCODE,H');
 

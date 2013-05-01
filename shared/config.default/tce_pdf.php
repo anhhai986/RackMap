@@ -229,6 +229,11 @@ define('K_DIGSIG_REASON', 'Certification');
  */
 define('K_DIGSIG_CONTACT', 'you@example.com');
 
+/**
+ * Do not change the following value.
+ */
+define('K_TCPDF_EXTERNAL_CONFIG', true);
+
 //============================================================+
 // END OF FILE
 //============================================================+

@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : tce_rmtcpdf.php
 // Begin       : 2011-12-13
-// Last Update : 2012-12-13
+// Last Update : 2013-03-18
 //
 // Description : TCPDF extended class to print exported RackMap data.
 //
@@ -19,7 +19,7 @@
 //               support@rackmap.net
 //
 // License:
-//    Copyright (C) 2011-2012 Fubra Limited
+//    Copyright (C) 2011-2013 Fubra Limited
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU Affero General Public License as
@@ -46,7 +46,7 @@
  */
 
 require_once('../config/tce_config.php');
-require_once('../../shared/code/tcpdf.php');
+require_once('../../shared/tcpdf/tcpdf.php');
 
 /**
  * @class RMTCPDF
