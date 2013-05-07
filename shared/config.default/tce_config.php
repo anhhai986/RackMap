@@ -32,7 +32,7 @@
 /**
  * RackMap version (do not change).
  */
-define ('K_RACKMAP_VERSION', '1.0.046');
+define ('K_RACKMAP_VERSION', '1.0.047');
 
 /**
  * 2-letters code for default language.

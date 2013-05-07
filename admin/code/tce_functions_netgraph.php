@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : tce_functions_netgraph.php
 // Begin       : 2011-11-23
-// Last Update : 2012-03-07
+// Last Update : 2013-05-07
 //
 // Description : Functions to draw a graphic map of the network (require graphviz).
 //
@@ -53,7 +53,7 @@
 function F_get_network_dot_map($cbt_id=0) {
 	global $l, $db;
 	require_once('../config/tce_config.php');
-	require_once('../../shared/code/htmlcolors.php');
+	require_once('../../shared/tcpdf/include/tcpdf_colors.php');
 	$dot = 'graph RackMapNetwork {'.K_NEWLINE;
 	//$dot .= K_TAB.'splines=true;'.K_NEWLINE; // VERY SLOW OPTION!
 	$dot .= K_TAB.'fontname=Helvetica;'.K_NEWLINE;
@@ -126,7 +126,7 @@ function F_get_network_dot_map($cbt_id=0) {
 	$sql .= ' ORDER BY cab_a_obj_id ASC, cab_b_obj_id ASC';
 	if ($r = F_db_query($sql, $db)) {
 		while ($m = F_db_fetch_array($r)) {
-			$color = array_keys($webcolor, $m['cab_color']);
+			$color = array_keys(TCPDF_COLORS::$webcolor, $m['cab_color']);
 			if (!empty($color) AND isset($color[0])) {
 				$color = $color[0];
 			} else {
@@ -162,7 +162,7 @@ function F_get_object_dot_map($obj_id, $obj_level) {
 	} else {
 		F_display_db_error();
 	}
-	$color = array_keys($webcolor, $mobj['obt_color']);
+	$color = array_keys(TCPDF_COLORS::$webcolor, $mobj['obt_color']);
 	if (!empty($color) AND isset($color[0])) {
 		$color = $color[0];
 	} else {
@@ -171,7 +171,7 @@ function F_get_object_dot_map($obj_id, $obj_level) {
 	if (F_count_rows(K_TABLE_OBJECTS.', '.K_TABLE_OBJECTS_MAP, 'WHERE omp_child_obj_id=obj_id AND omp_parent_obj_id='.$obj_id) > 0) {
 		// CLUSTER
 		$dot .= $spacer.'subgraph clusterOBJ'.$mobj['obj_id'].' {'.K_NEWLINE;
-		$dot .= $spacerb.'color='.((getContrastColor($webcolor[$color])=='000000')?'black':'white').';'.K_NEWLINE;
+		$dot .= $spacerb.'color='.((getContrastColor(TCPDF_COLORS::$webcolor[$color])=='000000')?'black':'white').';'.K_NEWLINE;
 		$dot .= $spacerb.'bgcolor='.$color.';'.K_NEWLINE;
 		$dot .= $spacerb.'label="'.F_compact_string($mobj['obj_name'], true).'";'.K_NEWLINE;
 		$dot .= $spacerb.'URL="tce_view_object?obj_id='.$mobj['obj_id'].'";'.K_NEWLINE;

@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : tce_functions_objects.php
 // Begin       : 2001-09-13
-// Last Update : 2012-12-13
+// Last Update : 2013-05-07
 //
 // Description : Functions for objects.
 //
@@ -245,7 +245,7 @@ function F_get_object_info($obj_id, $objdata, $tempfields, $tfkeys, $level=0) {
 		foreach ($objdata['attribute'] as $atb_name => $atb_value) {
 			if (!empty($atb_value)) {
 				$val = htmlspecialchars($atb_value, ENT_COMPAT, $l['a_meta_charset']);
-				if ($atb_name == 'IP') {
+				if (($atb_name == 'IP') OR ($atb_name == 'IPv4') OR ($atb_name == 'IPv6')) {
 					$ret .= getFormDescriptionLine($atb_name, '', '<a href="http://'.$val.'" title="IP" onclick="pdfWindow=window.open(\'http://'.$val.'\',\'pdfWindow\',\'dependent,menubar=yes,resizable=yes,scrollbars=yes,status=yes,toolbar=yes\'); return false;">'.$val.'</a>');
 				} else {
 					// replace template tokens on attribute value (if any)
@@ -319,7 +319,7 @@ function F_get_object_info($obj_id, $objdata, $tempfields, $tfkeys, $level=0) {
  * Returns object data.
  * @param $obj_id (int) Object ID.
  * @param $ilo (array) Data required to access ILO on servers.
-
+ * @param $capacity (array) Information about rack capacity.
  * @return string Object data.
  */
 function F_get_object_data($obj_id, &$ilo=array(), &$capacity=array()) {
@@ -504,7 +504,7 @@ function F_get_object_data_array($obj_id, &$ilo=array(), &$capacity=array()) {
 				} elseif ($ma['atb_name'] == 'ILO password') {
 					$ilo['password'] = $ma['atv_value'];
 				}
-				if (($objdata['obj_name'] == 'ILO') AND ($ma['atb_name'] == 'IP')) {
+				if (($objdata['obj_name'] == 'ILO') AND (($ma['atb_name'] == 'IP') OR ($ma['atb_name'] == 'IPv4') OR ($ma['atb_name'] == 'IPv6'))) {
 					$ilo['ip'] = $ma['atv_value'];
 				}
 			}
@@ -1285,7 +1285,7 @@ function F_select_color($color='d3d3d3', $field_name='cab_color', $label='color'
 	global $l, $db;
 	require_once('../config/tce_config.php');
 	require_once('../../shared/code/tce_functions_form.php');
-	include('../../shared/code/htmlcolors.php');
+	require_once('../../shared/tcpdf/include/tcpdf_colors.php');
 	$out = '';
 	$out .= '<div class="row">'.K_NEWLINE;
 	$out .= '<span class="label">'.K_NEWLINE;
@@ -1293,7 +1293,7 @@ function F_select_color($color='d3d3d3', $field_name='cab_color', $label='color'
 	$out .= '</span>'.K_NEWLINE;
 	$out .= '<span class="formw">'.K_NEWLINE;
 	$out .= '<select name="'.$field_name.'" id="'.$field_name.'" size="0" title="'.$title.'" onchange="document.getElementById(\'selected_color\').style.backgroundColor=\'#\'+document.getElementById(\''.$field_name.'\').options[document.getElementById(\''.$field_name.'\').selectedIndex].value">'.K_NEWLINE;
-	foreach ($webcolor as $name => $col) {
+	foreach (TCPDF_COLORS::$webcolor as $name => $col) {
 		$out .= '<option value="'.$col.'" style="background-color:#'.$col.';color:#'.getContrastColor($col).'"';
 		if ($color == $col) {
 			$out .= ' selected="selected"';

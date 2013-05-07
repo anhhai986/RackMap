@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : tce_edit_connections.php
 // Begin       : 2011-11-16
-// Last Update : 2011-12-09
+// Last Update : 2013-05-07
 //
 // Description : Edit Connections.
 //
@@ -60,7 +60,7 @@ require_once('../code/tce_page_header.php');
 require_once('../../shared/code/tce_functions_form.php');
 require_once('tce_functions_objects.php');
 
-require_once('../../shared/code/htmlcolors.php');
+require_once('../../shared/tcpdf/include/tcpdf_colors.php');
 
 //$user_id = intval($_SESSION['session_user_id']);
 //$userip = $_SESSION['session_user_ip'];
@@ -94,7 +94,7 @@ if (isset($_REQUEST['cab_ids']) AND !empty($_REQUEST['cab_ids'])) {
 	$sel_b_obj_id = 0;
 	$sel_cbt_id = 0;
 }
-if (isset($_REQUEST['cab_color']) AND in_array($_REQUEST['cab_color'], $webcolor)) {
+if (isset($_REQUEST['cab_color']) AND in_array($_REQUEST['cab_color'], TCPDF_COLORS::$webcolor)) {
 	$cab_color = $_REQUEST['cab_color'];
 } else {
 	$cab_color = 'd3d3d3';

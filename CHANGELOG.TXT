@@ -1,3 +1,7 @@
+1.0.047 (2013-05-07)
+	- Reference to webcolors array was fixed.
+	- TCPDF library was updated.
+
 1.0.046 (2013-05-01)
 	- Some scripts were added to the admin/tools directory.
 	- minor bugfixes.

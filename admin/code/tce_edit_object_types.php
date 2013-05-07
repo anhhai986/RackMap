@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : tce_edit_object_types.php
 // Begin       : 2011-10-31
-// Last Update : 2012-01-06
+// Last Update : 2013-05-07
 //
 // Description : Edit object types.
 //
@@ -60,7 +60,7 @@ require_once('../../shared/code/tce_functions_form.php');
 
 require_once('tce_functions_objects.php');
 
-require_once('../../shared/code/htmlcolors.php');
+require_once('../../shared/tcpdf/include/tcpdf_colors.php');
 
 //$user_id = intval($_SESSION['session_user_id']);
 //$userip = $_SESSION['session_user_ip'];
@@ -81,7 +81,7 @@ if (isset($_REQUEST['obt_description'])) {
 } else {
 	$obt_description = '';
 }
-if (isset($_REQUEST['obt_color']) AND in_array($_REQUEST['obt_color'], $webcolor)) {
+if (isset($_REQUEST['obt_color']) AND in_array($_REQUEST['obt_color'], TCPDF_COLORS::$webcolor)) {
 	$obt_color = $_REQUEST['obt_color'];
 } else {
 	$obt_color = '';
